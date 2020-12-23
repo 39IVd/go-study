@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -58,10 +60,39 @@ func main() {
 		// 여러 개의 elems slice들을 전부 targetSlice에 추가할 수 있다. => 하나의 slice로 만듬
 		jobs = append(jobs, extractedJobs...)
 	}
-	fmt.Println(jobs)
+	writeJobs(jobs)
+	fmt.Println("Done, extracted", len(jobs))
 
 }
 
+func writeJobs(jobs []extractedJob) {
+	// file 생성
+	file, err := os.Create("jobs.csv")
+	checkErr(err)
+	// fileWriter 생성 (file에 write할 수 있는 객체)
+	w := csv.NewWriter(file)
+	// 함수가 끝나는 시점에 data write
+	defer w.Flush()
+	headers := []string{"Link", "Title", "Company", "Location", "Salary", "Summary"}
+	wErr := w.Write(headers)
+	checkErr(wErr)
+
+	for _, job := range jobs {
+		jobSlice := []string{
+			"https://kr.indeed.com/viewjob?jk=" + job.id,
+			job.title,
+			job.company,
+			job.location,
+			job.salary,
+			job.summary,
+		}
+		jwErr := w.Write(jobSlice)
+		checkErr(jwErr)
+	}
+
+}
+
+// 2. getPage : 각 Page마다 http.Get() -> goquery로 res.Body의 Document를 읽어 각 job card를 searchCards에 저장
 /* indeed 사이트의 page 동작 방식 :
 각 페이지마다 50개씩 출력됨 (limit=50)
 1페이지는 start=0
@@ -91,7 +122,7 @@ func getPage(page int) []extractedJob {
 
 }
 
-// searchCards안의 모든 card로부터 job을 추출
+// 3. extractJob : searchCards안의 모든 card로부터 job slices 추출 후 저장
 func extractJob(card *goquery.Selection) extractedJob {
 	// card : jobsearch-SerpJobCard라는 클래스명을 가진 element
 	// card의 실제 값 : <div class="~~~" data-jk="~~~"..>
@@ -121,7 +152,7 @@ func extractJob(card *goquery.Selection) extractedJob {
 
 // jobsearch-SerpJobCard
 
-// getPages() : Page 수를 반환하는 함수
+// 1. getPages() : 총 Page 수를 반환하는 함수
 func getPages() int {
 	pages := 0
 	// url에 접속 : http Request

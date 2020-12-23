@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"nomadcoders/bank/accounts"
+	"learngo/bank/accounts"
 )
 
 func main() {

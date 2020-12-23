@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"nomadcoders/dictionary/mydict"
+	"learngo/dictionary/mydict"
 )
 
 func main() {
